@@ -32,6 +32,9 @@
 	(perhaps I exaggerate) to your theme. And to keep notices, warnings readable.
 */
 
+global $kb_gettext_counter; global $kb_filters; global $kb_filters_used;
+$kb_gettext_counter = 0; $kb_filters=0; $kb_filters_used=0;
+
 /**
  * For Debugging purposes only -- in BuddyPress
  * 
@@ -89,6 +92,7 @@ function ep_error_handler( $errno, $errstr, $errfile, $errline, $errcontext ) {
  */
 function kb_display_errors() {
 	global $kb_notices;
+	global $kb_gettext_counter; global $kb_filters; global $kb_filters_used;
 
 	if ( defined( 'KB_DISPLAY_CONSTANTS' ) ) {
 		$defined_constants = get_defined_constants( true );
@@ -176,6 +180,9 @@ STYLE;
 			default: echo "<div $style class = 'kb_mine kb_disp_error kb_$type'>$type: $str<br />Line $line, $file</div>";
 		}
 	}
+
+	if ( defined( 'KB_DISPLAY_HOOKS' ) ) 
+		echo "<div style = 'kb_mine kb_disp_error'>$kb_gettext_counter gettext calls; $kb_filters actions/filters. $kb_filters_used filters used.</div>";
 }
 
 /**
@@ -202,7 +209,7 @@ function kb_dump( $ivars ) {
  * @param $vars
  */
 function kb_log_hooks( $args, $vars = '' ) {
-	global $wp_filter, $wp_query;
+	global $wp_filter, $wp_query, $kb_gettext_counter, $kb_filters, $kb_filters_used;
 
 	if ( $args != 'gettext' && $args != 'gettext_with_context' ) {
 			$functions_called = "";
@@ -212,7 +219,11 @@ function kb_log_hooks( $args, $vars = '' ) {
 				$functions_called = ( array_key_exists( $args, $wp_filter ) )? kb_dump( $funcs ) : "" ;
 			}
 			trigger_error( "$args<div class = 'kb_hook_vars'>" . kb_dump( $vars ) . "</div><div class = 'kb_fn_called'>"  . $functions_called . "</div>", E_USER_WARNING );
-	}
+			$kb_filters++;
+	} else $kb_gettext_counter++;
+
+	if ( array_key_exists( $args, $wp_filter ) )
+		$kb_filters_used++;
 }
 
 /**
