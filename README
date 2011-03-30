@@ -1,0 +1,16 @@
+KB_Debug
+========
+
+A swiss army knife for debugging WordPress/BuddyPress plugins.
+
+Drop this into wp-content/mu-plugins/ to start logging notices and warnings and displaying them.
+
+WP_DEBUG must be set to true for anything to display.
+
+DO NOT USE THIS ON PRODUCTION SITES.
+
+Set the following constants anywhere in your code to display:
+
+# KB_DISPLAY_HOOKS Set to true to display hooks, as well as functions called with arguments. Only use with modern browsers that can handle lots of data.
+# KB_FORCE_HIDE Sometimes, you might not want to display anything. Setting this to true ensures that nothing is displayed.
+
