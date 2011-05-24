@@ -4,7 +4,7 @@
 	Plugin Name: KB_DEBUG
 	Plugin URI: http://kunal-b.in
 	Description: A swiss army knife for debugging wordpress plugins.
-	Version: 0.1
+	Version: 0.2-bleeding
 	Author: Kunal Bhalla.
 	Author URI: http://kunal-b.in
 	License: GPL2
@@ -32,20 +32,11 @@
 	(perhaps I exaggerate) to your theme. And to keep notices, warnings readable.
 */
 
-global $kb_gettext_counter; global $kb_filters; global $kb_filters_used;
-$kb_gettext_counter = 0; $kb_filters=0; $kb_filters_used=0;
+/* 1. Logging hooks, notices and warnings and displaying at the end. */
 
-/**
- * For Debugging purposes only -- in BuddyPress
- * 
- * Helps in hiding all the 'deprecated' notices BuddyPress generates.
- */
-function kb_disable_deprecated() {
-	return false;
-}
-
-//No deprecated data. For BuddyPress developers, specially.
-add_filter( 'deprecated_function_trigger_error', 'kb_disable_deprecated' );
+global $kb_gettext_counter; $kb_gettext_counter = 0; 
+global $kb_filters; $kb_filters = 0;
+global $kb_filters_used; $kb_filters_used = 0;
 
 /**
  * Log all errors to a global array and dump later. 
@@ -94,61 +85,17 @@ function kb_display_errors() {
 	global $kb_notices;
 	global $kb_gettext_counter; global $kb_filters; global $kb_filters_used;
 
-	if ( defined( 'KB_DISPLAY_CONSTANTS' ) ) {
+	if ( defined( 'KB_DISPLAY_CONSTANTS' ) || isset( $_GET['KB_DISPLAY_CONSTANTS'] ) ) {
 		$defined_constants = get_defined_constants( true );
 		$defined_constants = $defined_constants['user'];
 		ksort( $defined_constants );
 		trigger_error( kb_dump( $defined_constants ) );
 	}
 
-	if ( defined( 'KB_FORCE_HIDE' ) && KB_FORCE_HIDE )
+	if ( defined( 'KB_FORCE_HIDE' ) || isset( $_GET['KB_FORCE_HIDE'] ) )
 		return;
-
-	echo <<<STYLE
-	<style type = 'text/css' >
-		.kb_disp_error {
-			background-color: #fff;
-		border: solid 1px #aaa;
-			padding: 5px;
-			margin: 5px;
-		}
-		.kb_Notice {
-			color: #00f;
-		}
-		.kb_Error {
-			color: #f00;
-		}
-		.kb_Strict {
-			color: #666;
-			display: none;
-		}
-		.kb_Warning {
-			background-color: #111;
-			color: #faa;
-		}
-		.kb_Debug {
-			background-color: #111;
-			color: #fff;
-		}
-		.kb_Hook {
-			background-color: #fff;
-			color: #444;
-		}
-		.kb_hook_vars {
-			display: none;
-		}
-	</style>
-
-	<script type = 'text/javascript'>
-		(function($){
-			$(document).ready(function(){
-				$('.kb_Hook').click(function(){
-					$(this).contents('.kb_hook_vars').toggle('fast');
-				});
-			});
-		}(jQuery))
-	</script>
-STYLE;
+	
+	echo "<div id = 'kb-debug-results'>";
 		
 	foreach( $kb_notices as $notice ) {
 		extract( $notice );
@@ -163,33 +110,25 @@ STYLE;
 			default: $type = 'Strict';
 		}
 
-
-		$style = "";
-
-		global $kb_display_keywords;
-
-		//Display only my errors, thank you.
-/*		if( is_array( $kb_display_keywords ) )
-			foreach ( $kb_display_keywords as $the_keyword )
-				$style = ( preg_match( $the_keyword, $file ) )? $style : 'style= "display: none;"';
-		*/
 		switch ($type) {
 			case 'Hook': 
-				if ( defined( 'KB_DISPLAY_HOOKS' ) ) 
-					echo "<div class = 'kb_mine kb_disp_error kb_Hook'>$str</div>"; break;
-			default: echo "<div $style class = 'kb_mine kb_disp_error kb_$type'>$type: $str<br />Line $line, $file</div>";
+				if ( defined( 'KB_DISPLAY_HOOKS' ) || isset($_GET['KB_DISPLAY_HOOKS']) ) 
+					echo "<div class = 'kb_Hook'>$str</div>"; break;
+			default: echo "<div class = 'kb_$type'>$type: $str<br />Line $line, $file</div>";
 		}
 	}
 
+	echo "</div>";
+
 	if ( defined( 'KB_DISPLAY_HOOKS' ) ) 
-		echo "<div style = 'kb_mine kb_disp_error'>$kb_gettext_counter gettext calls; $kb_filters actions/filters. $kb_filters_used filters used.</div>";
+		echo "<div style = 'kb_disp_hook'>$kb_gettext_counter gettext calls; $kb_filters actions/filters. $kb_filters_used filters used.</div>";
 }
 
 /**
  * A buffered version of var_dump
  *
  * I really should rename this, considering
- * kb are my initials.
+ * kb is (are?) my initials.
  *
  * @param mixed $var The data to log
  */
@@ -226,6 +165,23 @@ function kb_log_hooks( $args, $vars = '' ) {
 		$kb_filters_used++;
 }
 
+//Make PHP use my custom handler to log messages instead of directly displaying them.
+set_error_handler( 'ep_error_handler' );
+
+//Log all errors.
+add_action( 'all', 'kb_log_hooks' );
+
+//I _need_ jquery to allow expanding text.
+wp_enqueue_script( 'jquery' );
+
+//Log everything, but display only if WP_DEBUG is set to true
+if ( defined( 'WP_DEBUG' ) && WP_DEBUG )
+	//And don't mess up any ajax stuff either.
+	if ( !array_key_exists( 'HTTP_X_REQUESTED_WITH', $_SERVER ) || ( array_key_exists( 'HTTP_X_REQUESTED_WITH' , $_SERVER ) && $_SERVER['HTTP_X_REQUESTED_WITH'] != 'XMLHttpRequest' ) )
+		add_action( 'shutdown', 'kb_display_errors' );
+
+/* 2. Reset capabilities to initial state if KB_RESET_CAPS is set in $_GET */
+
 /**
  * Reverts capabilities to default state. 
  *
@@ -242,18 +198,6 @@ function kb_reset_caps() {
 	require_once( "/home/kunalb/dev/eventpress/wp-admin/includes/schema.php" );
 	populate_roles();
 }
+if (isset( $_GET['KB_RESET_CAPS'] ))
+	add_action( 'init', kb_reset_caps );
 
-//Make PHP use my custom handler to log messages instead of directly displaying them.
-set_error_handler( 'ep_error_handler' );
-
-//Log all errors.
-add_action( 'all', 'kb_log_hooks' );
-
-//I _need_ jquery.
-wp_enqueue_script( 'jquery' );
-
-//Log everything, but display only if WP_DEBUG is set to true
-if ( defined( 'WP_DEBUG' ) && WP_DEBUG )
-	//And don't mess up any ajax stuff either.
-	if ( !array_key_exists( 'HTTP_X_REQUESTED_WITH', $_SERVER ) || ( array_key_exists( 'HTTP_X_REQUESTED_WITH' , $_SERVER ) && $_SERVER['HTTP_X_REQUESTED_WITH'] != 'XMLHttpRequest' ) )
-		add_action( 'shutdown', 'kb_display_errors' );
