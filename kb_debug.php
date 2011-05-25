@@ -133,7 +133,7 @@ class KB_Debug_Errors {
 	/**
 	 * Constructor. Initializes $counters and $logged.
 	 */
-	public function __construct() {
+	public function __construct( $display ) {
 		$this->logged = Array();
 
 		$this->counters = new STDClass();
@@ -142,7 +142,9 @@ class KB_Debug_Errors {
 		$this->counters->strict   = 0;
 		$this->counters->notices  = 0;
 
-		add_action( 'shutdown', Array( &$this, 'display' ), 99 );
+		if ($display) 
+			add_action( 'shutdown', Array( &$this, 'display' ), 99 );
+
 		$original_handler = set_error_handler( Array( &$this, 'log' ) );
 
 		$this->message = "";
@@ -308,8 +310,11 @@ if (defined ('WP_DEBUG') && WP_DEBUG) {
 		$kdb->log( func_get_args() );
 	}
 
-	if( isset( $_GET['KB_Debug_Errors'] ) || ( defined( 'KB_DEBUG' ) && KB_DEBUG ) )
-		new KB_Debug_Errors();
+	/**
+	 * Always log the errors, just don't show them if not called explicitly.
+	 */
+	new KB_Debug_Errors( isset( $_GET['KB_Debug_Errors'] ) || ( defined( 'KB_DEBUG' ) && KB_DEBUG ) );
+
 	if( isset( $_GET['KB_Debug_Hooks'] ) || ( defined( 'KB_DEBUG' ) && KB_DEBUG ) )
 		new KB_Debug_Hooks();
 }
