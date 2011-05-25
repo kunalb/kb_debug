@@ -45,7 +45,66 @@ define( 'KB_DEBUG_RELURL', content_url() . "/mu-plugins" );
  */
 
 /**
- * The Base Class used to save errors and warnings information, if any.
+ * Used to save debugging information logged by the user.
+ */ 
+class KB_Debug {
+
+	/**
+	 * Store any errors, notices, warnings or debug information.
+	 * @access private
+	 * @var Array
+	 */
+	private $logged;
+
+	/**
+	 * Constructor. Initializes values and assigns actions.
+	 */
+	public function __construct() {
+		$this->logged = Array();
+
+		add_action( 'shutdown', Array( &$this, 'display' ), 98 );
+		wp_enqueue_style( 'kb-debug-css', KB_DEBUG_RELURL . "/kb-debug.css" ); 
+	}
+
+	/**
+	 * Display all logged debugging information.
+	 * @access public
+	 */
+	function display() {
+		echo "<div class = 'kb-debug-box' id = 'kb-debug'><div class = 'effect-border'>";
+		echo "<h2>Logged</h2>";	
+		echo "<ul>";
+		foreach( $this->logged as $log ) {
+			echo "<li>";
+			echo "<h3>{$log->backtrace['line']}, {$log->backtrace['file']}</h3>";
+			foreach( $log->data as $data ) {
+				echo "<pre>"; print_r( $data ); echo "</pre>";
+			}
+			echo "</li>";
+		}
+		echo "</ul>";
+		echo "</div></div>";
+	}
+
+	/**
+	 * Log array of arguments passed to it. Later pretty printed with a backtrace using print_r.
+	 * Do not call this function directly.
+	 * @access public
+	 */
+	function log( $arglist ) {
+		$log = new STDClass();
+		$log->data = $arglist;
+		$backtrace = debug_backtrace();
+		$log->backtrace = $backtrace[1];
+
+		$this->logged[] = $log;
+	}
+
+}
+ 
+
+/**
+ * Used to save errors and warnings information, if any.
  * @package KB_Debug
  */
 class KB_Debug_Errors {
@@ -65,6 +124,13 @@ class KB_Debug_Errors {
 	private $counters;
 
 	/**
+	 * Warning in case an existing error handler is removed.
+	 * @access private
+	 * @var String
+	 */
+	private $message; 
+
+	/**
 	 * Constructor. Initializes $counters and $logged.
 	 */
 	public function __construct() {
@@ -76,8 +142,12 @@ class KB_Debug_Errors {
 		$this->counters->strict   = 0;
 		$this->counters->notices  = 0;
 
-		add_action( 'shutdown', Array( &$this, 'display' ) );
-		set_error_handler( Array( &$this, 'log' ) );
+		add_action( 'shutdown', Array( &$this, 'display' ), 99 );
+		$original_handler = set_error_handler( Array( &$this, 'log' ) );
+
+		$this->message = "";
+		if( $original_handler != NULL )
+			$this->message = "<p>Warning: An existing error handler was replaced." . print_r( $original_handler, true ) . "</p>";
 
 		wp_enqueue_style( 'kb-debug-css', KB_DEBUG_RELURL . "/kb-debug.css" ); 
 	}
@@ -89,6 +159,7 @@ class KB_Debug_Errors {
 	public function display() {
 		echo "<div class = 'kb-debug-box'><div class = 'effect-border'>";
 		echo "<h2>Errors and Warnings</h2>";	
+		echo $this->message;
 		echo "<ul>";
 		foreach( $this->logged as $log ) {
 			$type = 'Strict';
@@ -110,7 +181,6 @@ class KB_Debug_Errors {
 
 			echo "<h4>Context</h4>";
 			echo "<pre style = 'max-height: 100px;'>"; print_r($log['context']); echo "</pre>";
-
 
 			echo "</li>";
 		}
@@ -169,7 +239,7 @@ class KB_Debug_Hooks {
 		$this->counters->gettexts = 0;
 
 		add_action( 'all', Array( &$this, 'log' ) );
-		add_action( 'shutdown', Array( &$this, 'display' ) );
+		add_action( 'shutdown', Array( &$this, 'display' ), 100 );
 
 		wp_enqueue_style( 'kb-debug-css', KB_DEBUG_RELURL . "/kb-debug.css" ); 
 	}
@@ -227,30 +297,19 @@ class KB_Debug_Hooks {
  * Check the $_GET variable and initialize classes accordingly.
  */
 if (defined ('WP_DEBUG') && WP_DEBUG) {
-	if( isset( $_GET['KB_Debug_Errors'] ) )
+	
+	/**
+	 * Call this function to save any data. Records calling information via a stack trace.
+	 */
+	function kb_debug() {
+		static $kdb;
+		if ( !isset( $kdb ) ) $kdb = new KB_Debug();
+
+		$kdb->log( func_get_args() );
+	}
+
+	if( isset( $_GET['KB_Debug_Errors'] ) || ( defined( 'KB_DEBUG' ) && KB_DEBUG ) )
 		new KB_Debug_Errors();
-	if( isset( $_GET['KB_Debug_Hooks'] ) )
+	if( isset( $_GET['KB_Debug_Hooks'] ) || ( defined( 'KB_DEBUG' ) && KB_DEBUG ) )
 		new KB_Debug_Hooks();
 }
-
-
-/* 2. Reset capabilities to initial state if KB_RESET_CAPS is set in $_GET */
-
-/**
- * Reverts capabilities to default state. 
- *
- * Useful while debugging.
- */
-function kb_reset_caps() {
-	global $wpdb;
-	$key = $wpdb->prefix . 'user_roles';
-
-	//Bye, bye, existing caps
-	delete_option( $key );
-
-	//Repopulate
-	require_once( "/home/kunalb/dev/eventpress/wp-admin/includes/schema.php" );
-	populate_roles();
-}
-if (isset( $_GET['KB_RESET_CAPS'] ))
-	add_action( 'init', kb_reset_caps );
