@@ -29,7 +29,7 @@ Upload `kb_debug.php` and 'kb-debug.css' to the `/wp-content/mu-plugins/` direct
 Because.
 
 == Screenshots ==
-None yet.
+1. Showing how errors and hooks appear on using this plugin. 
 
 == Changelog ==
 
