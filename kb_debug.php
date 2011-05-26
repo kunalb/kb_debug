@@ -232,3 +232,25 @@ if (defined ('WP_DEBUG') && WP_DEBUG) {
 	if( isset( $_GET['KB_Debug_Hooks'] ) )
 		new KB_Debug_Hooks();
 }
+
+
+/* 2. Reset capabilities to initial state if KB_RESET_CAPS is set in $_GET */
+
+/**
+ * Reverts capabilities to default state. 
+ *
+ * Useful while debugging.
+ */
+function kb_reset_caps() {
+	global $wpdb;
+	$key = $wpdb->prefix . 'user_roles';
+
+	//Bye, bye, existing caps
+	delete_option( $key );
+
+	//Repopulate
+	require_once( "/home/kunalb/dev/eventpress/wp-admin/includes/schema.php" );
+	populate_roles();
+}
+if (isset( $_GET['KB_RESET_CAPS'] ))
+	add_action( 'init', kb_reset_caps );
