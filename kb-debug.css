@@ -1,0 +1,57 @@
+.kb-debug-box {
+	background-color: #f4f4f4;
+	color: #111;
+	text-shadow: #fff 0 1px 0;
+	border-radius: 3px 3px 0 0;
+	border: solid 1px #ccc;
+	margin: 10px;
+	font-family: sans-serif;
+	font-size: 12px;
+	line-height: 20px;
+}
+
+.effect-border {
+	border-top: solid 1px #fff;
+	border-bottom: solid 1px #dfdfdf;
+	border-radius: 3px 3px 0 0;
+	padding: 10px;
+}
+
+	.kb-debug-box h2 {
+		font-weight: bold;
+		color: #400014;
+	}
+
+	.kb-debug-box ul {
+		list-style-type: none;
+		margin: 0;
+		border-top: solid #dfdfdf 1px;
+		border-bottom: solid #fff 1px;
+	}
+
+		.kb-debug-box li {
+			display: block;
+			border-top: solid #fff 1px;
+			border-bottom: solid #dfdfdf 1px;
+			padding: 2px;
+		}
+
+			.kb-debug-box h3 {
+				font-weight: bold;
+				display: block;
+			}
+
+			.kb-debug-box h4 {
+				font-weight: bold;
+				color: #666;
+				display: block;
+			}
+
+			.kb-debug-box pre {
+				background-color: #fafafa;
+				border-radius: 5px;
+				max-height: 300px;
+				width: 95%;
+				overflow: auto;
+			}
+

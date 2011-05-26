@@ -1,5 +1,4 @@
 <?php
-
 /*
 	Plugin Name: KB_DEBUG
 	Plugin URI: http://kunal-b.in
@@ -32,172 +31,204 @@
 	(perhaps I exaggerate) to your theme. And to keep notices, warnings readable.
 */
 
-/* 1. Logging hooks, notices and warnings and displaying at the end. */
-
-global $kb_gettext_counter; $kb_gettext_counter = 0; 
-global $kb_filters; $kb_filters = 0;
-global $kb_filters_used; $kb_filters_used = 0;
+/**
+ * The URL for the plugin.
+ * @global string KB_DEBUG_RELURL
+ */
+define( 'KB_DEBUG_RELURL', content_url() . "/mu-plugins" );
 
 /**
- * Log all errors to a global array and dump later. 
- *
- * @global Array $kb_notices
+ * The main (and only) file for KB_Debug, divided into classes based on functionality.
+ * @package KB_Debug
+ * @author Kunal Bhalla
+ * @version 0.1
  */
-global $kb_notices;
-$kb_notices = Array();
 
 /**
- * Only display notices/warnings/etc. following the given filters.
- *
- * @global Array $kb_display_keywords
+ * The Base Class used to save errors and warnings information, if any.
+ * @package KB_Debug
  */
-global $kb_display_keywords;
+class KB_Debug_Errors {
 
-/**
- * Custom error handler -- stores all the errors in the global array.
- *
- * @uses $kb_notices
- */
-function ep_error_handler( $errno, $errstr, $errfile, $errline, $errcontext ) {
-	global $kb_notices;
+	/**
+	 * Store any errors, notices, warnings or debug information.
+	 * @access private
+	 * @var Array
+	 */
+	private $logged;
 
-	$kb_notices[] = Array(
-		'no'		=> $errno,
-		'str'		=> $errstr,
-		'file'		=> $errfile,
-		'line'		=> $errline,
-		'context'	=> $errcontext
-	);
+	/**
+	 * Counters for filters available, filters used and gettexts.
+	 * @access private
+	 * @var Array
+	 */
+	private $counters;
 
-	return 1;
+	/**
+	 * Constructor. Initializes $counters and $logged.
+	 */
+	public function __construct() {
+		$this->logged = Array();
+
+		$this->counters = new STDClass();
+		$this->counters->errors   = 0;
+		$this->counters->warnings = 0;
+		$this->counters->strict   = 0;
+		$this->counters->notices  = 0;
+
+		add_action( 'shutdown', Array( &$this, 'display' ) );
+		set_error_handler( Array( &$this, 'log' ) );
+
+		wp_enqueue_style( 'kb-debug-css', KB_DEBUG_RELURL . "/kb-debug.css" ); 
+	}
+
+	/**
+	 * Displays the logged data, if any.
+	 * @access public
+	 */
+	public function display() {
+		echo "<div class = 'kb-debug-box'><div class = 'effect-border'>";
+		echo "<h2>Errors and Warnings</h2>";	
+		echo "<ul>";
+		foreach( $this->logged as $log ) {
+			$type = 'Strict';
+			switch ($log['no']) {
+				case E_ERROR: $type = 'E_ERROR'; break;
+				case E_WARNING: $type = 'E_WARNING'; break;
+				case E_NOTICE: $type = 'E_NOTICE'; break;
+				case E_STRICT: $type = 'E_STRICT'; break;
+				case E_USER_NOTICE: $type = 'E_USER_NOTICE'; break;
+				case E_USER_WARNING: $type = 'E_USER_WARNING'; break;
+			}
+
+			echo "<li class = 'kb-debug-{$type}'>";
+
+			echo "<h3>{$type}</h3>";
+			echo "<h4>{$log['line']}, {$log['file']}.</h4>";
+
+			echo "<p>{$log['str']}</p>";
+
+			echo "<h4>Context</h4>";
+			echo "<pre style = 'max-height: 100px;'>"; print_r($log['context']); echo "</pre>";
+
+
+			echo "</li>";
+		}
+		echo "</ul>";
+
+		echo "</div></div>";
+	}
+
+	/**
+	 * Log all error based data.
+	 * @access public
+	 */
+	public function log( $errno, $errstr, $errfile, $errline, $errcontext ) {
+		$this->logged[] = Array(
+			'no'		=> $errno,
+			'str'		=> $errstr,
+			'file'		=> $errfile,
+			'line'		=> $errline,
+			'context'	=> $errcontext
+		);
+
+		return 1;
+	}
+
 }
 
 /**
- * Display the errors.
- *
- * Displays the errors on shutdown -- as well as
- * constants, if KB_DISPLAY_CONSTANTS is set to true.
- * Will show hooks if KB_DISPLAY_HOOKS is set to true.
- *
- * @uses $kb_notices
+ * Logs all hook information including arguments passed and functions run on each hook.
+ * @package KB_Debug
  */
-function kb_display_errors() {
-	global $kb_notices;
-	global $kb_gettext_counter; global $kb_filters; global $kb_filters_used;
+class KB_Debug_Hooks {
 
-	if ( defined( 'KB_DISPLAY_CONSTANTS' ) || isset( $_GET['KB_DISPLAY_CONSTANTS'] ) ) {
-		$defined_constants = get_defined_constants( true );
-		$defined_constants = $defined_constants['user'];
-		ksort( $defined_constants );
-		trigger_error( kb_dump( $defined_constants ) );
-	}
+	/**
+	 * Store any Hook information
+	 * @access private
+	 * @var Array
+	 */
+	private $logged;
 
-	if ( defined( 'KB_FORCE_HIDE' ) || isset( $_GET['KB_FORCE_HIDE'] ) )
-		return;
-	
-	echo "<div id = 'kb-debug-results'>";
+	/**
+	 * Counters for filters available, filters used and gettexts.
+	 * @access private
+	 * @var Array
+	 */
+	private $counters;
+
+	/**
+	 * Constructor. Initializes $counters and $logged.
+	 */
+	public function __construct() {
+		$this->logged = Array();
 		
-	foreach( $kb_notices as $notice ) {
-		extract( $notice );
+		$this->counters = new STDClass();
+		$this->counters->actions  = 0;
+		$this->counters->used     = 0;
+		$this->counters->gettexts = 0;
 
-		switch ($no) {
-			case E_ERROR: $type = 'Error'; break;
-			case E_WARNING: $type = 'Warning'; break;
-			case E_NOTICE: $type = 'Notice'; break;
-			case E_STRICT: $type = 'Strict'; break;
-			case E_USER_NOTICE: $type = 'Debug'; break;
-			case E_USER_WARNING: $type = 'Hook'; break;
-			default: $type = 'Strict';
-		}
+		add_action( 'all', Array( &$this, 'log' ) );
+		add_action( 'shutdown', Array( &$this, 'display' ) );
 
-		switch ($type) {
-			case 'Hook': 
-				if ( defined( 'KB_DISPLAY_HOOKS' ) || isset($_GET['KB_DISPLAY_HOOKS']) ) 
-					echo "<div class = 'kb_Hook'>$str</div>"; break;
-			default: echo "<div class = 'kb_$type'>$type: $str<br />Line $line, $file</div>";
-		}
+		wp_enqueue_style( 'kb-debug-css', KB_DEBUG_RELURL . "/kb-debug.css" ); 
 	}
 
-	echo "</div>";
+	/**
+	 * Displays the logged data, if any.
+	 * @access public
+	 */
+	public function display() {
+		echo "<div class = 'kb-debug-box'><div class = 'effect-border'>";
+		echo "<h2>Hooks List (Total {$this->counters->actions}, {$this->counters->gettexts} gettext calls omitted)</h2>";
+		echo "<ul>";
+		foreach( $this->logged as $log ) {
+			echo "<li>";
+			echo "<h3>{$log['name']}</h3>";
+		
+			echo "<h4>Arguments</h4>";
+			if ( !empty( $log['vars'] ) ) {
+				echo "<pre>";print_r( $log['vars'] );echo "</pre>";	
+			} else echo "<pre>None.</pre>";	
+			
+			echo "<h4>Functions</h4>";
+			echo "<pre>";print_r( $log['funcs'] );echo "</pre>";	
+			
+			echo "</li>";
+		}
+		echo "</ul>";
 
-	if ( defined( 'KB_DISPLAY_HOOKS' ) ) 
-		echo "<div style = 'kb_disp_hook'>$kb_gettext_counter gettext calls; $kb_filters actions/filters. $kb_filters_used filters used.</div>";
-}
+		echo "</div></div>";
+	}
 
-/**
- * A buffered version of var_dump
- *
- * I really should rename this, considering
- * kb is (are?) my initials.
- *
- * @param mixed $var The data to log
- */
-function kb_dump( $ivars ) {
-	ob_start();
-	var_dump( $ivars );
-	return ob_get_clean();
-}
+	/**
+	 * Log all hook based data.
+	 * @access public
+	 */
+	public function log( $args, $vars = '' ) {
+		global $wp_filter, $wp_query;
 
-/**
- * Saves all hooks data.
- *
- * Attached to the all hook. Records details about the 
- * hook called, and all the arguments provided, etc.
- *
- * @param $args
- * @param $vars
- */
-function kb_log_hooks( $args, $vars = '' ) {
-	global $wp_filter, $wp_query, $kb_gettext_counter, $kb_filters, $kb_filters_used;
-
-	if ( $args != 'gettext' && $args != 'gettext_with_context' ) {
-			$functions_called = "";
+		if ( $args != 'gettext' && $args != 'gettext_with_context' ) {
 			if ( array_key_exists( $args, $wp_filter ) ) {
 				$funcs = $wp_filter[$args];
 				ksort($funcs);
-				$functions_called = ( array_key_exists( $args, $wp_filter ) )? kb_dump( $funcs ) : "" ;
+				$this->counters->used++;
+
+				$this->logged[] = Array( 'vars' => $vars, 'funcs' => $funcs, 'name' => $args );
 			}
-			trigger_error( "$args<div class = 'kb_hook_vars'>" . kb_dump( $vars ) . "</div><div class = 'kb_fn_called'>"  . $functions_called . "</div>", E_USER_WARNING );
-			$kb_filters++;
-	} else $kb_gettext_counter++;
 
-	if ( array_key_exists( $args, $wp_filter ) )
-		$kb_filters_used++;
+			$this->counters->actions++;
+		} else $this->counters->gettexts++;
+	}
+
 }
 
-//Make PHP use my custom handler to log messages instead of directly displaying them.
-set_error_handler( 'ep_error_handler' );
-
-//Log all errors.
-add_action( 'all', 'kb_log_hooks' );
-
-//I _need_ jquery to allow expanding text.
-wp_enqueue_script( 'jquery' );
-
-//Log everything, but display only if WP_DEBUG is set to true
-if ( defined( 'WP_DEBUG' ) && WP_DEBUG )
-	//And don't mess up any ajax stuff either.
-	if ( !array_key_exists( 'HTTP_X_REQUESTED_WITH', $_SERVER ) || ( array_key_exists( 'HTTP_X_REQUESTED_WITH' , $_SERVER ) && $_SERVER['HTTP_X_REQUESTED_WITH'] != 'XMLHttpRequest' ) )
-		add_action( 'shutdown', 'kb_display_errors' );
-
-/* 2. Reset capabilities to initial state if KB_RESET_CAPS is set in $_GET */
-
-/**
- * Reverts capabilities to default state. 
- *
- * Useful while debugging.
+/** 
+ * Check the $_GET variable and initialize classes accordingly.
  */
-function kb_reset_caps() {
-	global $wpdb;
-	$key = $wpdb->prefix . 'user_roles';
-
-	//Bye, bye, existing caps
-	delete_option( $key );
-
-	//Repopulate
-	require_once( "/home/kunalb/dev/eventpress/wp-admin/includes/schema.php" );
-	populate_roles();
+if (defined ('WP_DEBUG') && WP_DEBUG) {
+	if( isset( $_GET['KB_Debug_Errors'] ) )
+		new KB_Debug_Errors();
+	if( isset( $_GET['KB_Debug_Hooks'] ) )
+		new KB_Debug_Hooks();
 }
-if (isset( $_GET['KB_RESET_CAPS'] ))
-	add_action( 'init', kb_reset_caps );
-
