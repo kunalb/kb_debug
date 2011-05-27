@@ -1,9 +1,10 @@
 === kb_debug.php  ===
 Contributors: kunalb
+Donate link: http://kunal-b.in
 Tags: Debugging
 Requires at least: WordPress 3.0
 Tested up to: 3.2
-Stable tag: 0.2
+Stable tag: 0.2.2
 
 Debug your plugins and themes.
 
@@ -16,9 +17,12 @@ Debug your plugins and themes.
 
 To see both just add ?KB_Debug_Errors&KB_Debug_Hooks. (Essentially $_GET[var] must be set to enable that feature).
 
-
 == Installation ==
 Upload `kb_debug.php` and 'kb-debug.css' to the `/wp-content/mu-plugins/` directory. (Create this directory if it doesn't exist).
+
+NOTE: These files must be placed directly under mu-plugins: ie mu-plugins/kb_debug.php and mu-plugins/kb-debug.css.
+
+Putting these into mu-plugins allows the plugin to capture the most number of hooks it can.
 
 
 == Features ==
@@ -35,6 +39,10 @@ Because.
 2. Showing how debugging information is shown in the plugin.
 
 == Changelog ==
+
+= 0.2.2 =
+* Modified readme.txt and updated the PHP version.
+* Renamed Screenshots for wp.org to display.
 
 = 0.2 =
 * Plugin completely refactored.

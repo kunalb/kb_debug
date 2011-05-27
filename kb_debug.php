@@ -1,14 +1,14 @@
 <?php
 /*
 	Plugin Name: KB_DEBUG
-	Plugin URI: http://kunal-b.in
+	Plugin URI: http://github.com/kunalb/kb_debug
 	Description: A swiss army knife for debugging wordpress plugins.
-	Version: 0.2-bleeding
+	Version: 0.2.2
 	Author: Kunal Bhalla.
 	Author URI: http://kunal-b.in
 	License: GPL2
 
-	Copyright 2010  Kunal Bhalla  (email : bhalla.kunal@gmail.com)
+	Copyright 2011 Kunal Bhalla  (email : bhalla.kunal@gmail.com)
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License, version 2, as 
