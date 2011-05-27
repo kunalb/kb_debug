@@ -4,7 +4,7 @@ Donate link: http://kunal-b.in
 Tags: Debugging
 Requires at least: WordPress 3.0
 Tested up to: 3.2
-Stable tag: 0.2.2
+Stable tag: 0.2.3
 
 Debug your plugins and themes.
 
@@ -40,9 +40,11 @@ Because.
 
 == Changelog ==
 
+= 0.2.3 =
+* Renamed Screenshots for wp.org to display.
+
 = 0.2.2 =
 * Modified readme.txt and updated the PHP version.
-* Renamed Screenshots for wp.org to display.
 
 = 0.2 =
 * Plugin completely refactored.
