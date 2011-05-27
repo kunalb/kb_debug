@@ -4,7 +4,7 @@ Donate link: http://kunal-b.in
 Tags: Debugging
 Requires at least: WordPress 3.0
 Tested up to: 3.2
-Stable tag: 0.2.3
+Stable tag: 0.2.4
 
 Debug your plugins and themes.
 
@@ -39,6 +39,9 @@ Because.
 2. Showing how debugging information is shown in the plugin.
 
 == Changelog ==
+
+= 0.2.4 =
+* Moved README to readme.txt
 
 = 0.2.3 =
 * Renamed Screenshots for wp.org to display.

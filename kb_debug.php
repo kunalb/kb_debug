@@ -3,7 +3,7 @@
 	Plugin Name: KB_DEBUG
 	Plugin URI: http://github.com/kunalb/kb_debug
 	Description: A swiss army knife for debugging wordpress plugins.
-	Version: 0.2.3
+	Version: 0.2.4
 	Author: Kunal Bhalla.
 	Author URI: http://kunal-b.in
 	License: GPL2
