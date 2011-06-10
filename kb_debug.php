@@ -293,20 +293,23 @@ class KB_Debug_Hooks {
 
 }
 
+/** Enqueue the styling for kb_debug. */
+wp_enqueue_style( 'kb-debug-css', KB_DEBUG_RELURL . "/kb-debug.css" ); 
+
+/**
+ * Call this function to save any data. Records calling information via a stack trace.
+ */
+function kb_debug() {
+	static $kdb;
+	if ( !isset( $kdb ) ) $kdb = new KB_Debug();
+
+	$kdb->log( func_get_args() );
+}
+
 /** 
  * Check the $_GET variable and initialize classes accordingly.
  */
 if (defined ('WP_DEBUG') && WP_DEBUG) {
-	
-	/**
-	 * Call this function to save any data. Records calling information via a stack trace.
-	 */
-	function kb_debug() {
-		static $kdb;
-		if ( !isset( $kdb ) ) $kdb = new KB_Debug();
-
-		$kdb->log( func_get_args() );
-	}
 
 	if( isset( $_GET['KB_Debug_Errors'] ) || ( defined( 'KB_DEBUG' ) && KB_DEBUG ) )
 		new KB_Debug_Errors();
