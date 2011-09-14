@@ -318,6 +318,6 @@ if (defined ('WP_DEBUG') && WP_DEBUG) {
 	 */
 	new KB_Debug_Errors( isset( $_GET['KB_Debug_Errors'] ) || ( defined( 'KB_DEBUG' ) && KB_DEBUG ) );
 
-	if( isset( $_GET['KB_Debug_Hooks'] ) || ( defined( 'KB_DEBUG' ) && KB_DEBUG ) )
+	if( isset( $_GET['KB_Debug_Hooks'] ) || ( defined( 'KB_DEBUG_HOOKS' ) && KB_DEBUG_HOOKS ) )
 		new KB_Debug_Hooks();
 }
