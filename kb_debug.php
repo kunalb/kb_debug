@@ -155,6 +155,31 @@ class KB_Debug_Errors {
 	}
 
 	/**
+	 * Toggles display of types of errors
+	 */
+	protected function toggleList() {
+		$output = <<<SCRIPT
+			<script type='text/javascript'>
+			(function($){
+				$(function(){
+					$('.kb-debug-error-toggle').click(function(){
+						$( '.kb-debug-' + $(this).first().attr('id').replace(/^kb-d-toggle-/, "") ).toggle();
+					})
+					$('.kb-debug-E_STRICT').toggle();
+				});
+			}(jQuery));
+			</script>
+SCRIPT;
+		$output .= "Toggle &mdash;";
+		foreach( Array( 'E_ERROR', 'E_WARNING', 'E_NOTICE', 'E_STRICT', 'E_USER_NOTICE', 'E_USER_WARNING' ) as $type ) {
+			if( $type == "E_STRICT" ) $checked = ""; else $checked = "checked='checked'";
+			$output .= "<input type='checkbox' $checked class='kb-debug-error-toggle' id='kb-d-toggle-$type' /><label for='kb-d-toggle-$type'>$type</label>";
+		}
+
+		return $output;
+	}
+
+	/**
 	 * Displays the logged data, if any.
 	 * @access public
 	 */
@@ -162,6 +187,7 @@ class KB_Debug_Errors {
 		echo "<div class = 'kb-debug-box'><div class = 'effect-border'>";
 		echo "<h2>Errors and Warnings</h2>";	
 		echo $this->message;
+		echo $this->toggleList();
 		echo "<ul>";
 		foreach( $this->logged as $log ) {
 			$type = 'Strict';
@@ -312,6 +338,7 @@ function kb_debug() {
  * Check the $_GET variable and initialize classes accordingly.
  */
 if (defined ('WP_DEBUG') && WP_DEBUG) {
+	wp_enqueue_script( 'jquery' );
 
 	/**
 	 * Always log the errors, just don't show them if not called explicitly.

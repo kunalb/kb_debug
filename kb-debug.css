@@ -76,4 +76,23 @@
 				padding: 10px;
 				margin: 10px;
 			}
-
+.kb-debug-error-toggle {
+	display: none;
+}
+.kb-debug-error-toggle + label {
+	color: #555;
+	background-color: #ddd;
+	padding: 5px;
+	margin: 5px;
+	font-size: 10px;
+	border-radius: 3px;
+	text-shadow: none;
+	line-height: 25px;
+}
+.kb-debug-error-toggle:checked + label {
+	background-color: #333;
+	color: #fff;
+}
+.kb-debug-hide {
+	display: none;
+}
